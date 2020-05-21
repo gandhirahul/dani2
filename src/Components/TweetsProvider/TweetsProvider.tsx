@@ -1,14 +1,16 @@
 import { useEffect, useReducer } from "react";
 import { Tweet } from "../../types";
 import {
+  changeAppMode,
   endFetching,
   initialState,
   reducer,
   resetTweets,
   startFetching,
-  addTweets
+  addTweets,
+  addTweetsReverse
 } from "./reducer";
-import { resetDB, fetchTweets } from "../../data";
+import { resetDB, fetchTweets, fetchTweetsReverse } from "../../data";
 
 type TweetsProviderProps = {
   children: (tweets: Tweet[]) => JSX.Element;
@@ -16,25 +18,42 @@ type TweetsProviderProps = {
 };
 
 function TweetsProvider({ children, delay }: TweetsProviderProps) {
-  const [{ isFetching, lastId, tweets }, dispatch] = useReducer(
-    reducer,
-    initialState
-  );
+  const [
+    { firstId, isFetching, lastId, reverseMode, tweets },
+    dispatch
+  ] = useReducer(reducer, initialState);
 
   // Effect to trigger tweet fetches
   useEffect(() => {
     let ignore = false;
 
     async function fetch() {
-      try {
-        const newTweets = (await fetchTweets(lastId)).data;
+      if (!reverseMode) {
+        try {
+          const newTweets = (await fetchTweets(lastId)).data;
 
-        if (!ignore) {
-          dispatch(addTweets(newTweets));
+          if (!ignore) {
+            dispatch(addTweets(newTweets));
+          }
+        } catch (error) {
+          if (!ignore) {
+            dispatch(endFetching());
+          }
         }
-      } catch (error) {
-        if (!ignore) {
-          dispatch(endFetching());
+      } else {
+        if (firstId !== null) {
+          console.log("fetch reverse");
+          try {
+            const newTweets = (await fetchTweetsReverse(firstId)).data;
+
+            if (!ignore) {
+              dispatch(addTweetsReverse(newTweets));
+            }
+          } catch (error) {
+            if (!ignore) {
+              dispatch(endFetching());
+            }
+          }
         }
       }
     }
@@ -47,7 +66,7 @@ function TweetsProvider({ children, delay }: TweetsProviderProps) {
         ignore = true;
       };
     }
-  }, [isFetching, lastId]);
+  }, [isFetching, lastId, firstId, reverseMode]);
 
   // Effect to schedule trigger fetch interval
   useEffect(() => {
@@ -77,8 +96,12 @@ function TweetsProvider({ children, delay }: TweetsProviderProps) {
     }
   }, [lastId]);
 
+  const changeMode = (isReverse: boolean): void => {
+    dispatch(changeAppMode(isReverse));
+  };
+
   if (tweets.length) {
-    return children(tweets);
+    return children(tweets, changeMode);
   }
 
   return null;

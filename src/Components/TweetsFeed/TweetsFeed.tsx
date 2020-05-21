@@ -48,9 +48,16 @@ const useStyles = makeStyles(() => ({
 type TweetsFeedProps = {
   keepScrollPosition: boolean;
   tweets: TweetType[];
+  setDelay: () => boolean;
+  changeMode: (isReverse: boolean) => void;
 };
 
-function TweetsFeed({ keepScrollPosition, tweets }: TweetsFeedProps) {
+function TweetsFeed({
+  changeMode,
+  keepScrollPosition,
+  tweets,
+  setDelay
+}: TweetsFeedProps) {
   const classes = useStyles();
   const listRef = useRef(null);
   const scrollOffsetRef = useRef(0);
@@ -83,6 +90,19 @@ function TweetsFeed({ keepScrollPosition, tweets }: TweetsFeedProps) {
         itemSize={ROW_HEIGHT + ROW_PADDING}
         onScroll={({ scrollDirection, scrollOffset }) => {
           scrollOffsetRef.current = scrollOffset;
+
+          if (scrollOffset >= ROW_HEIGHT * tweets.length) {
+            changeMode(true);
+            setDelay(2000);
+
+            return;
+          }
+
+          if (scrollOffset > 0) {
+            setDelay(null);
+          } else {
+            setDelay(2000);
+          }
         }}
         overscanCount={3}
         ref={listRef}
