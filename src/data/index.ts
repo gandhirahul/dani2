@@ -40,6 +40,13 @@ export function fetchTweets(lastId: number | null): AxiosPromise<Tweet[]> {
   });
 }
 
+export function fetchTweetsReverse(firstId: number): AxiosPromise<Tweet[]> {
+  return axios({
+    method: "get",
+    url: `${API_BASE}/api?beforeId=${firstId}`
+  });
+}
+
 export function resetDB(): AxiosPromise {
   return axios({
     method: "get",
